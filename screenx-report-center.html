@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ScreenX Report Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0C0F; --bg2:#13161B; --card:#161A20; --line:#262C34;
+  --ink:#EDEFF2; --sub:#7C8592; --teal:#D9A441; --amber:#C96B3F; --red:#E5566B;
+  --blue:#4E8FE8;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){ --bg:#F3F1EC; --bg2:#FFFFFF; --card:#FFFFFF; --line:#E1DDD3; --ink:#191510; --sub:#7A7264; }
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,rgba(217,164,65,.06),transparent 55%),var(--bg);color:var(--ink);font-family:'Cairo',sans-serif;min-height:100%}
+.mono{font-family:'JetBrains Mono',monospace}
+header{position:sticky;top:0;z-index:10;background:var(--bg2);border-bottom:2px solid var(--teal);padding:calc(16px + env(safe-area-inset-top,0px)) 18px 15px}
+.brand{display:flex;align-items:center;gap:11px}
+.dot{width:11px;height:11px;background:var(--teal);transform:rotate(45deg);flex-shrink:0}
+.brand h1{font-size:19px;margin:0;font-weight:800;letter-spacing:.2px}
+.brand span{color:var(--sub);font-size:12.5px;font-weight:600}
+main{max-width:720px;margin:0 auto;padding:18px 16px 60px}
+.card{background:var(--card);border:1px solid var(--line);border-right:3px solid var(--teal);border-radius:10px;padding:18px;margin-bottom:16px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.card h2{margin:0 0 4px;font-size:16.5px;font-weight:800;display:flex;align-items:center;gap:8px}
+.card p.desc{margin:2px 0 14px;color:var(--sub);font-size:13.5px;line-height:1.7}
+label{display:block;font-size:13px;color:var(--sub);margin:10px 0 6px}
+input[type=text],textarea,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--ink);font-family:inherit;font-size:14.5px}
+textarea{resize:vertical;min-height:90px;line-height:1.6}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--teal);outline-offset:1px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1;min-width:140px}
+button{border:none;border-radius:10px;padding:12px 16px;font-family:inherit;font-weight:700;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;transition:transform .1s,opacity .15s}
+button:active{transform:scale(.97)}
+.btn-p{background:linear-gradient(135deg,#E6B860,#C9932E);color:#1A1207;box-shadow:0 4px 14px rgba(217,164,65,.3)}
+.btn-s{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn-d{background:transparent;border:1px solid var(--red);color:var(--red)}
+.btn-w{background:var(--amber);color:#3A2400}
+button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
+.pill.open{background:rgba(78,143,232,.15);color:var(--blue)}
+.pill.wait{background:rgba(232,163,61,.15);color:var(--amber)}
+.pill.resp{background:rgba(49,198,176,.15);color:var(--teal)}
+.pill.closed,.pill.rej{background:rgba(229,86,107,.15);color:var(--red)}
+.pill.auto,.pill.unmon{background:rgba(138,148,163,.18);color:var(--sub)}
+.pill.draft{background:rgba(232,163,61,.15);color:var(--amber)}
+.pill.sent{background:rgba(49,198,176,.15);color:var(--teal)}
+.ticket{border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:10px;background:var(--bg2)}
+.ticket-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.ticket-id{font-weight:700;font-size:14.5px}
+.ticket-meta{color:var(--sub);font-size:12.5px;margin-top:4px}
+.empty{color:var(--sub);font-size:13.5px;text-align:center;padding:22px 10px;border:1px dashed var(--line);border-radius:12px}
+.log{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.log:last-child{border-bottom:none}
+.log time{color:var(--sub);font-size:11.5px;white-space:nowrap;min-width:64px}
+.status-bar{display:flex;justify-content:space-between;font-size:12.5px;color:var(--sub);margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.toggle{display:flex;align-items:center;gap:10px}
+.switch{width:44px;height:26px;border-radius:20px;background:var(--line);position:relative;cursor:pointer;flex-shrink:0;border:none;padding:0}
+.switch.on{background:var(--teal)}
+.switch i{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s}
+.switch.on i{transform:translateX(-18px)}
+.result{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.result-head{padding:11px 13px;background:var(--bg2);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.result-body{padding:13px}
+.field{margin-bottom:9px}
+.field b{display:block;font-size:11.5px;color:var(--sub);margin-bottom:3px;font-weight:700}
+.field span{font-size:13.5px}
+.reply-box{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:13.5px;line-height:1.75;white-space:pre-wrap;direction:ltr;text-align:left;font-family:'JetBrains Mono',monospace;margin-top:6px}
+.badge-note{font-size:11.5px;color:var(--sub);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:10px;line-height:1.7}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;background:var(--bg2);border-top:1px solid var(--line);padding:8px 4px calc(8px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 24px rgba(0,0,0,.25)}
+.tabbar button{flex:1;flex-direction:column;background:transparent;color:var(--sub);border:none;font-weight:700;font-size:10.5px;padding:6px 2px;gap:3px;border-radius:12px}
+.tabbar button .ic{font-size:19px}
+.tabbar button.active{background:transparent;color:var(--teal)}
+.tabbar button.active .ic{background:rgba(217,164,65,.15);border-radius:10px;padding:2px 10px}
+.hide{display:none !important}
+main{padding-bottom:96px}
+.connect-card{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--bg2)}
+.connect-card + .connect-card{margin-top:10px}
+::-webkit-scrollbar{height:0;width:0}
+</style>
+</head>
+<body>
+<div id="lockScreen" style="position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px">
+  <div style="width:52px;height:52px;background:var(--teal);transform:rotate(45deg)"></div>
+  <div style="text-align:center">
+    <div style="font-weight:800;font-size:20px">ScreenX Report Center</div>
+    <div style="color:var(--sub);font-size:13px;margin-top:4px">أدخل المفتاح للدخول</div>
+  </div>
+  <input type="password" id="lockInput" placeholder="المفتاح" style="max-width:260px;text-align:center" autocomplete="off">
+  <button class="btn-p" id="lockSubmit" style="max-width:260px;width:100%">دخول</button>
+  <div id="lockError" style="color:var(--red);font-size:12.5px;display:none">مفتاح غير صحيح</div>
+</div>
+<div id="appRoot" class="hide">
+<header>
+  <div class="brand">
+    <div class="dot" id="statusDot"></div>
+    <div>
+      <h1>ScreenX Report Center</h1>
+      <span>مركز إدارة البلاغات والاعتراضات</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="tabbar">
+    <button class="active" data-tab="report"><span class="ic">📝</span>بلاغ</button>
+    <button data-tab="templates"><span class="ic">📑</span>الصيغ</button>
+    <button data-tab="mail"><span class="ic">📧</span>البريد</button>
+    <button data-tab="analyze"><span class="ic">🔎</span>تحليل</button>
+    <button data-tab="tickets"><span class="ic">📂</span>التذاكر</button>
+    <button data-tab="log"><span class="ic">🕒</span>السجل</button>
+    <button data-tab="owner" class="owner-only hide"><span class="ic">👑</span>المالك</button>
+  </div>
+
+  <!-- REPORT TAB -->
+  <section id="tab-report">
+    <div class="card">
+      <h2>إنشاء بلاغ جديد</h2>
+      <p class="desc">جهّز نص البلاغ، احفظه كتذكرة، وافتح بريدك للإرسال.</p>
+      <input type="hidden" id="rTicket">
+      <label>البريد المستهدف</label>
+      <input type="text" id="rEmail" value="safetysupport@tiktok.com" placeholder="support@platform.com">
+      <label>نص البلاغ</label>
+      <textarea id="rBody" placeholder="اكتب تفاصيل البلاغ هنا..."></textarea>
+      <div class="btnrow">
+        <button class="btn-p" id="btnCopyReport">📋 نسخ النص</button>
+        <button class="btn-s" id="btnMailReport">✉️ فتح البريد</button>
+        <button class="btn-s" id="btnSaveReport">➕ حفظ كتذكرة</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEMPLATES TAB -->
+  <section id="tab-templates" class="hide">
+    <div class="card">
+      <h2>📑 قائمة الصيغ الجاهزة</h2>
+      <p class="desc">اختر صيغة جاهزة لاستخدامها كأساس للبلاغ — يمكنك تعديلها بعد الإدراج.</p>
+      <div id="templatesList"></div>
+    </div>
+  </section>
+
+  <!-- MAIL TAB -->
+  <section id="tab-mail" class="hide">
+    <div class="card">
+      <h2>📧 ربط Outlook حقيقي</h2>
+      <p class="desc">اتصال حقيقي عبر Microsoft: قراءة صندوق الوارد + إرسال حقيقي كـ Reply على نفس الرسالة. كل رد يُرسل تلقائيًا بدون أي تدخل منك — الرسائل المعروفة (تصريف، إغلاق، رفض...) تستخدم القالب الافتراضي، وأي رد غير معروف يستخدم صيغة "قاصر" تلقائيًا.</p>
+      <div class="btnrow">
+        <button class="btn-p" id="btnMsConnect">📧 ربط الإيميل</button>
+        <button class="btn-d hide" id="btnMsDisconnect">فصل</button>
+      </div>
+      <div class="ticket-meta" id="outlookStatus" style="margin-top:10px">غير متصل</div>
+      <details id="setupBox" style="margin-top:14px">
+        <summary style="cursor:pointer;font-weight:700;font-size:13.5px">⚙️ إعداد مرة واحدة فقط (Client ID)</summary>
+        <label>Azure Client ID</label>
+        <input type="text" id="msClientId" placeholder="الصق Client ID من Azure Portal">
+        <label>Redirect URI (أضفه في Azure كـ Single-page application)</label>
+        <input type="text" id="msRedirect" readonly>
+        <label>رابط الـ Backend (لسجل دخول حقيقي مركزي — اختياري)</label>
+        <input type="text" id="backendUrl" placeholder="https://your-backend.onrender.com">
+        <label>رابط Discord Webhook (إشعار فوري لك بأي دخول — بدون باكند)</label>
+        <input type="text" id="discordWebhook" placeholder="https://discord.com/api/webhooks/...">
+      </details>
+      <div class="toggle" style="margin-top:14px">
+        <button class="switch on" id="autoSendSwitch"><i></i></button>
+        <div>
+          <div style="font-weight:700">إرسال تلقائي بدون تأكيد</div>
+          <div class="ticket-meta">مفعّل — الرسائل المعروفة تُرسل فورًا بدون سؤالك</div>
+        </div>
+      </div>
+      <div class="badge-note">⚠️ يعمل فقط من رابط تستضيفه أنت بنفسك (مثل Netlify) — رابط claude.ai/artifact يمنع الاتصال بأي API خارجي. يحتاج تطبيق Azure بصلاحيتي <b>Mail.Read</b> و <b>Mail.Send</b> (نوع SPA، بدون Client Secret).</div>
+    </div>
+
+    <div class="card" id="monitorCard" style="display:none">
+      <h2>🟢 Monitoring</h2>
+      <div class="toggle">
+        <button class="switch" id="monSwitch"><i></i></button>
+        <div>
+          <div style="font-weight:700" id="monLabel">المراقبة متوقفة</div>
+          <div class="ticket-meta" id="monSub">اضغط للتفعيل</div>
+        </div>
+      </div>
+      <div class="status-bar">
+        <span>آخر فحص: <b id="lastCheck" class="mono">—</b></span>
+        <span>رسائل جديدة: <b id="newMsgs" class="mono">0</b></span>
+      </div>
+      <div class="btnrow"><button class="btn-s" id="btnCheckNow">افحص الآن</button></div>
+    </div>
+  </section>
+
+
+  <!-- ANALYZE TAB -->
+  <section id="tab-analyze" class="hide">
+    <div class="card">
+      <h2>🔎 تحليل رد الدعم</h2>
+      <p class="desc">الصق نص رسالة الدعم (عربي أو إنجليزي) — سيصنّفها النظام تلقائيًا ويجهّز ردًا بالإنجليزية معاد استخدامه من آخر اعتراض لنفس البريد، مع إرفاق رسالة الدعم الأصلية في الرد.</p>
+      <label>بريد جهة الدعم</label>
+      <input type="text" id="aFrom" placeholder="support@platform.com">
+      <label>نص رسالة الدعم</label>
+      <textarea id="aBody" style="min-height:140px" placeholder="الصق رسالة الدعم هنا..."></textarea>
+      <div class="btnrow">
+        <button class="btn-p" id="btnAnalyze">تحليل الرسالة</button>
+      </div>
+      <div id="analyzeResult"></div>
+    </div>
+  </section>
+
+  <!-- TICKETS TAB -->
+  <section id="tab-tickets" class="hide">
+    <div class="card">
+      <h2>📂 إدارة التذاكر</h2>
+      <div id="ticketsList"><div class="empty">لا توجد تذاكر بعد</div></div>
+    </div>
+  </section>
+
+  <!-- LOG TAB -->
+  <section id="tab-log" class="hide">
+    <div class="card">
+      <h2>🕒 Activity Log</h2>
+      <div id="logList"><div class="empty">لا يوجد نشاط بعد</div></div>
+    </div>
+  </section>
+
+  <!-- OWNER TAB -->
+  <section id="tab-owner" class="hide">
+    <div class="card">
+      <h2>👑 لوحة المالك</h2>
+      <p class="desc">سجل كل من فتح الموقع من <b>هذا الجهاز</b> (الوقت، نوع الجهاز، IP، نوع المفتاح المستخدم). السجل محلي لكل جهاز، لمركزية حقيقية يحتاج ربط بالـ Backend.</p>
+      <div class="btnrow"><button class="btn-d" id="btnClearAccessLog">🗑️ مسح السجل</button></div>
+      <div id="accessLogList" style="margin-top:12px"></div>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const KEY='screenx';
+const OWNER_KEY='owner_RWL';
+
+function detectDevice(){
+  const ua=navigator.userAgent;
+  const type=/Mobi|Android/i.test(ua)?'جوال':/iPad|Tablet/i.test(ua)?'تابلت':'كمبيوتر';
+  const os=/iPhone|iPad/i.test(ua)?'iOS':/Android/i.test(ua)?'Android':/Windows/i.test(ua)?'Windows':/Mac/i.test(ua)?'Mac':'غير معروف';
+  return `${type} · ${os}`;
+}
+function backendUrl(){ return (localStorage.getItem('screenx_backend_url')||'').replace(/\/$/,''); }
+
+async function notifyDiscord(role, ip){
+  const hook = localStorage.getItem('screenx_discord_webhook');
+  if(!hook) return;
+  const labels = { owner:'👑 دخول المالك', user:'✅ دخول ناجح', failed:'❌ محاولة فاشلة' };
+  try{
+    await fetch(hook, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ content: `${labels[role]||role}\nالجهاز: ${detectDevice()}\nIP: ${ip||'—'}\nالوقت: ${new Date().toLocaleString('ar-EG')}` }),
+    });
+  }catch(e){ /* best-effort, ignore failures */ }
+}
+
+// Local (per-device) fallback — used automatically when no backend is configured.
+let currentIP=null;
+async function getIP(){
+  if(currentIP) return currentIP;
+  try{ const r=await fetch('https://api.ipify.org?format=json'); const d=await r.json(); currentIP=d.ip; }catch(e){ currentIP='غير متاح'; }
+  return currentIP;
+}
+function localRecordAccess(role, ip){
+  const log=JSON.parse(localStorage.getItem('screenx_access_log')||'[]');
+  log.unshift({ t:new Date().toLocaleString('ar-EG'), device:detectDevice(), ip, role });
+  localStorage.setItem('screenx_access_log', JSON.stringify(log.slice(0,200)));
+}
+function localIsBlocked(ip){ return JSON.parse(localStorage.getItem('screenx_blocklist')||'[]').includes(ip); }
+function localBumpFail(ip){
+  const counts=JSON.parse(localStorage.getItem('screenx_fail_counts')||'{}');
+  counts[ip]=(counts[ip]||0)+1;
+  localStorage.setItem('screenx_fail_counts', JSON.stringify(counts));
+}
+
+// Real, server-verified check — the backend reads the visitor's actual IP
+// from the request itself, so this works correctly across every device.
+async function serverAttempt(role){
+  const url=backendUrl();
+  if(!url) return null; // no backend configured — caller falls back to local
+  try{
+    const resp=await fetch(url+'/access/attempt', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ role, device: detectDevice() }),
+    });
+    return await resp.json(); // { blocked, failCount }
+  }catch(e){ return null; }
+}
+
+async function tryUnlock(){
+  const v=($('#lockInput').value||'').trim();
+  const role = (v===OWNER_KEY) ? 'owner' : (v===KEY) ? 'user' : 'failed';
+  const ip = await getIP();
+  notifyDiscord(role, ip);
+
+  const serverResult = await serverAttempt(role);
+  if(serverResult){
+    if(serverResult.blocked){
+      $('#lockError').textContent='🚫 تم حظرك من الدخول لهذا الموقع';
+      $('#lockError').style.display='block';
+      return;
+    }
+  } else {
+    if(localIsBlocked(ip)){
+      $('#lockError').textContent='🚫 تم حظرك من الدخول لهذا الموقع';
+      $('#lockError').style.display='block';
+      return;
+    }
+    if(role==='failed') localBumpFail(ip);
+    localRecordAccess(role, ip);
+  }
+
+  if(role!=='failed'){
+    sessionStorage.setItem('screenx_unlocked','1');
+    sessionStorage.setItem('screenx_role', role);
+    $('#lockScreen').style.display='none';
+    $('#appRoot').classList.remove('hide');
+    if(role==='owner') document.querySelectorAll('.owner-only').forEach(el=>el.classList.remove('hide'));
+  } else {
+    $('#lockError').textContent='مفتاح غير صحيح';
+    $('#lockError').style.display='block';
+  }
+}
+if(sessionStorage.getItem('screenx_unlocked')==='1'){
+  $('#lockScreen').style.display='none';
+  $('#appRoot').classList.remove('hide');
+  if(sessionStorage.getItem('screenx_role')==='owner') document.querySelectorAll('.owner-only').forEach(el=>el.classList.remove('hide'));
+} else {
+  $('#lockSubmit').onclick=tryUnlock;
+  $('#lockInput').addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
+}
+let state = load();
+function load(){
+  try{return JSON.parse(localStorage.getItem('screenx_state'))||{tickets:{},log:[],defaultTemplate:0,autoSend:true,mon:{outlook:false,outlookToken:null,active:false,checks:0,newMsgs:0,seen:[]}};}
+  catch(e){return {tickets:{},log:[],defaultTemplate:0,autoSend:true,mon:{outlook:false,outlookToken:null,active:false,checks:0,newMsgs:0,seen:[]}};}
+}
+function save(){ try{localStorage.setItem('screenx_state',JSON.stringify(state));}catch(e){} }
+function now(){return new Date().toLocaleString('ar-EG',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'});}
+function addLog(text){ state.log.unshift({t:now(),text}); state.log=state.log.slice(0,60); save(); renderLog(); }
+
+// ---- tabs ----
+document.querySelectorAll('.tabbar button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.tabbar button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    ['report','templates','mail','analyze','tickets','log','owner'].forEach(t=>$('#tab-'+t).classList.add('hide'));
+    $('#tab-'+b.dataset.tab).classList.remove('hide');
+  };
+});
+
+// ---- templates ----
+const TEMPLATES=[
+ {name:'قاصر', text:`Hello TikTok Support Team,
+
+I am submitting a formal report regarding an account whose owner is under the minimum age requirement for using TikTok. This is not merely an assumption; the content and videos on the account provide clear indications that the account owner is under the permitted age.
+
+According to TikTok's policies, users must meet the minimum age requirement to create and maintain an account. Therefore, I respectfully request a serious and thorough manual review of this account and its content.
+
+Please do not rely solely on an automated response or close this report without properly investigating the matter. If necessary, please use the appropriate age-verification procedures available to your team to determine the account owner's actual age.
+
+This report concerns the safety of a minor and should therefore be handled with appropriate priority. If the account is confirmed to belong to someone below the minimum age requirement, I expect TikTok to take the appropriate enforcement action in accordance with its policies.
+
+I also request a clear response explaining the outcome of the review. Closing this case without addressing the information provided would not resolve the concern raised in this report.
+
+Please ensure that this report receives a complete manual review by a member of the TikTok Safety/Support team rather than being automatically dismissed.
+
+Thank you for taking this matter seriously and for applying TikTok's policies appropriately.`},
+ {name:'قاصر ومحمي بهوية', text:`Hello TikTok Support Team,
+
+I am submitting a formal report regarding an account whose owner appears to be under the minimum age requirement for using TikTok. This is not merely an assumption; the content and videos posted on the account provide clear indications that the actual account owner is under the permitted age.
+
+According to TikTok's policies, users must meet the minimum age requirement to create and maintain an account. Therefore, I respectfully request a serious and thorough manual review of this account and its content.
+
+I would also like to add that the account appears to be protected or registered using an identity that does not belong to the actual account owner. The available information indicates that the person actually operating the account is a minor and is below TikTok's minimum age requirement. I respectfully ask TikTok to verify the actual account owner's identity and age through the appropriate verification procedures, rather than relying solely on the identity currently associated with the account.
+
+Please do not rely solely on an automated response or close this report without properly investigating the matter. If necessary, please use the appropriate age-verification procedures available to your team to determine the account owner's actual age.
+
+This report concerns the safety of a minor and should therefore be handled with appropriate priority. If the account is confirmed to belong to someone below the minimum age requirement, I expect TikTok to take the appropriate enforcement action in accordance with its policies.
+
+I also request a clear response explaining the outcome of the review. Closing this case without addressing the information provided would not resolve the concern raised in this report.
+
+Please ensure that this report receives a complete manual review by a member of the TikTok Safety/Support team rather than being automatically dismissed.
+
+Thank you for taking this matter seriously and for applying TikTok's policies appropriately.`},
+
+ {name:'حساب مخترق', text:`Hello TikTok Support Team,
+
+I am reporting an account that has been compromised and is no longer under the control of its rightful owner. The account's behavior, posted content, and messaging activity have changed suddenly and do not match the original owner's usual conduct, which strongly indicates unauthorized access.
+
+Please conduct a full security review of this account, including recent login activity and any changes made to its email, phone number, or password. I ask that TikTok take the appropriate action to secure the account and restore control to its rightful owner.
+
+Please do not close this report with an automated response. This requires manual review by a member of the Trust & Safety team.
+
+Thank you for your prompt attention to this matter.`},
+
+ {name:'انتحال شخصية', text:`Hello TikTok Support Team,
+
+I am submitting a report regarding an account that is impersonating a real individual without their consent. The account uses the person's name, photos, or likeness in a way that could mislead others into believing it is the authentic account of that individual.
+
+I respectfully request a thorough manual review of this account, including verification of its authenticity against the real person it claims to represent. Please take appropriate enforcement action in accordance with TikTok's impersonation policy if the report is confirmed.
+
+Please do not close this case based on an automated response alone. I would appreciate a clear explanation of the outcome of this review.
+
+Thank you for taking this report seriously.`},
+
+ {name:'محتوى إيذاء النفس', text:`Hello TikTok Support Team,
+
+I am reporting content that appears to promote or depict self-harm. This type of content poses a serious safety risk, particularly to vulnerable viewers, and I believe it requires urgent and careful manual review rather than automated handling.
+
+Please have a member of your Trust & Safety team review this content directly and take appropriate action in accordance with TikTok's policies on suicide and self-harm content, including any necessary support resources for the account owner.
+
+I ask that this report not be dismissed automatically given the sensitive and time-sensitive nature of the concern.
+
+Thank you for prioritizing this matter appropriately.`},
+
+ {name:'تحرش وتنمر', text:`Hello TikTok Support Team,
+
+I am submitting a report regarding an account or content involved in ongoing harassment or bullying directed at an individual. The behavior includes repeated targeting that goes beyond a single isolated incident and appears intended to demean or intimidate.
+
+I respectfully request a full manual review of the account's activity and content history, not just the single reported item, as the pattern of behavior is relevant to a fair assessment. Please take appropriate enforcement action in accordance with TikTok's harassment and bullying policy.
+
+Please do not rely solely on an automated response when reviewing this case.
+
+Thank you for addressing this concern seriously.`},
+
+ {name:'محتوى عنيف', text:`Hello TikTok Support Team,
+
+I am reporting content that depicts graphic violence or that appears to incite or glorify violent acts. Content of this nature can cause real harm and may violate TikTok's policies on violent and graphic content.
+
+I respectfully request a thorough manual review of this content by a member of your Trust & Safety team, rather than a decision based solely on automated moderation. If a violation is confirmed, I ask that TikTok take appropriate enforcement action.
+
+Please provide a clear response explaining the outcome of this review.
+
+Thank you for handling this matter with appropriate urgency.`},
+
+ {name:'بيع ممنوعات', text:`Hello TikTok Support Team,
+
+I am reporting an account or content that appears to be promoting or facilitating the sale of illegal or regulated goods. This activity may violate TikTok's Community Guidelines regarding regulated goods and illegal activities.
+
+I respectfully request a serious and thorough manual review of this account and its content, including any linked external contact methods used to arrange transactions. Please take the appropriate enforcement action if this report is confirmed.
+
+Please do not close this report without a proper investigation.
+
+Thank you for taking the necessary steps to address this matter.`},
+
+ {name:'احتيال ونصب', text:`Hello TikTok Support Team,
+
+I am reporting an account that appears to be engaged in fraudulent or scam activity, misleading users for financial or personal gain. This may violate TikTok's policies on fraud, spam, and platform manipulation.
+
+I respectfully request a detailed manual review of this account's activity and content, including any patterns consistent with scam behavior. Please take appropriate enforcement action in accordance with your policies if this is confirmed.
+
+I would also appreciate a clear response outlining the outcome of the review rather than an automatic closure of this report.
+
+Thank you for your attention to this matter.`},
+
+ {name:'خطاب كراهية', text:`Hello TikTok Support Team,
+
+I am reporting content or an account that appears to promote hateful ideology or discriminatory content targeting individuals or groups based on protected characteristics. This may violate TikTok's hateful behavior policy.
+
+I respectfully request a careful manual review of this content by a member of your Trust & Safety team. Automated systems may not fully capture the context needed to assess this type of violation, so human review is important here.
+
+Please share the outcome of this review once completed.
+
+Thank you for taking this report seriously.`},
+
+ {name:'انتهاك ملكية فكرية', text:`Hello TikTok Support Team,
+
+I am submitting a report regarding content that appears to infringe upon intellectual property rights, including the unauthorized use of copyrighted material. This may violate TikTok's intellectual property policy.
+
+I respectfully request a thorough manual review of this content and the account responsible for posting it. Please take the appropriate enforcement action in accordance with TikTok's policies if the infringement is confirmed.
+
+I would appreciate a clear explanation of the outcome rather than an automated dismissal of this report.
+
+Thank you for addressing this matter appropriately.`},
+
+ {name:'معلومات مضللة', text:`Hello TikTok Support Team,
+
+I am reporting content that appears to spread false or misleading information that could cause real-world harm. This may fall under TikTok's policies on misinformation and harmful content.
+
+I respectfully request a careful manual review of the claims made in this content, along with an assessment of the potential harm it could cause if left unaddressed. Please take appropriate action in accordance with your policies if this report is confirmed.
+
+Please avoid relying solely on an automated response for a matter of this nature.
+
+Thank you for your attention to this report.`}
+];
+function renderTemplates(){
+  $('#templatesList').innerHTML = TEMPLATES.map((t,i)=>`
+    <div class="ticket">
+      <div class="ticket-top">
+        <span class="ticket-id">${t.name}</span>
+        ${state.defaultTemplate===i?'<span class="pill resp">⭐ افتراضي للرد التلقائي</span>':''}
+      </div>
+      <div class="reply-box" style="max-height:140px;overflow-y:auto">${t.text.replace(/</g,'&lt;')}</div>
+      <div class="btnrow">
+        <button class="btn-p" data-use="${i}">استخدام في البلاغ</button>
+        <button class="btn-s" data-copy="${i}">📋 نسخ</button>
+        <button class="btn-w" data-def="${i}">${state.defaultTemplate===i?'✓ الافتراضي':'⭐ تعيين كافتراضي'}</button>
+      </div>
+    </div>`).join('');
+  $('#templatesList').querySelectorAll('[data-use]').forEach(b=>b.onclick=()=>{
+    $('#rBody').value=TEMPLATES[b.dataset.use].text;
+    document.querySelector('.tabbar button[data-tab="report"]').click();
+    toast('تم إدراج الصيغة في البلاغ');
+  });
+  $('#templatesList').querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{
+    navigator.clipboard.writeText(TEMPLATES[b.dataset.copy].text).then(()=>toast('تم نسخ الصيغة'));
+  });
+  $('#templatesList').querySelectorAll('[data-def]').forEach(b=>b.onclick=()=>{
+    state.defaultTemplate = Number(b.dataset.def); save(); renderTemplates();
+    toast('صار هذا القالب هو الرد التلقائي على رسائل التصريف');
+  });
+}
+
+function openMail(to, subject, body){
+  const outlookUrl = `ms-outlook://compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const mailtoUrl = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  let cancelled=false;
+  const onHide=()=>{ if(document.hidden) cancelled=true; };
+  document.addEventListener('visibilitychange', onHide);
+  window.location.href = outlookUrl;
+  setTimeout(()=>{
+    document.removeEventListener('visibilitychange', onHide);
+    if(!cancelled) window.open(mailtoUrl,'_blank');
+  }, 1400);
+}
+// ---- report creation ----
+$('#btnCopyReport').onclick=()=>{
+  navigator.clipboard.writeText($('#rBody').value||'').then(()=>toast('تم نسخ النص'));
+};
+function findOrCreateByEmail(email){
+  const existing = Object.values(state.tickets).find(t=>t.email===email);
+  if(existing) return existing.id;
+  const id = 'R-'+Date.now();
+  state.tickets[id]={id,email,created:now(),status:'open',lastResp:'—',appeals:[],monitoring:'مفعّل'};
+  return id;
+}
+$('#btnMailReport').onclick=()=>{
+  const to=$('#rEmail').value||'';
+  const id=findOrCreateByEmail(to);
+  const isFollowUp = state.tickets[id].appeals.length>0;
+  const subject = isFollowUp ? 'Re: Report' : 'Report';
+  openMail(to, subject, $('#rBody').value||'');
+  state.tickets[id].appeals.push({text:$('#rBody').value,at:now()});
+  save(); renderTickets();
+  addLog(isFollowUp?'تم تجهيز رد (Reply) على آخر رسالة':'تم فتح بلاغ جديد');
+};
+$('#btnSaveReport').onclick=()=>{
+  const to=$('#rEmail').value||'safetysupport@tiktok.com';
+  const id=findOrCreateByEmail(to);
+  if($('#rBody').value) state.tickets[id].appeals.push({text:$('#rBody').value,at:now()});
+  save(); addLog('تم حفظ البلاغ'); renderTickets(); toast('تم الحفظ');
+};
+
+// ---- real Microsoft OAuth (PKCE, read-only) ----
+function b64url(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+async function sha256(str){ return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)); }
+function randomVerifier(){ const a=new Uint8Array(64); crypto.getRandomValues(a); return b64url(a.buffer); }
+const redirectUri = window.location.origin + window.location.pathname;
+const DEFAULT_CLIENT_ID = ''; // ضع الـ Client ID هنا مرة واحدة داخل الملف ليختفي الإعداد نهائيًا
+$('#msRedirect').value = redirectUri;
+$('#msClientId').value = localStorage.getItem('ms_client_id') || DEFAULT_CLIENT_ID;
+$('#backendUrl').value = localStorage.getItem('screenx_backend_url') || '';
+$('#backendUrl').addEventListener('change', ()=>localStorage.setItem('screenx_backend_url', $('#backendUrl').value.trim()));
+$('#discordWebhook').value = localStorage.getItem('screenx_discord_webhook') || '';
+$('#discordWebhook').addEventListener('change', ()=>localStorage.setItem('screenx_discord_webhook', $('#discordWebhook').value.trim()));
+
+$('#btnMsConnect').onclick = async () => {
+  const clientId = $('#msClientId').value.trim();
+  if (!clientId) { $('#setupBox').open = true; toast('أدخل Client ID مرة واحدة فقط'); return; }
+  localStorage.setItem('ms_client_id', clientId);
+  const verifier = randomVerifier();
+  sessionStorage.setItem('pkce_verifier', verifier);
+  const challenge = b64url(await sha256(verifier));
+  const params = new URLSearchParams({
+    client_id: clientId, response_type: 'code', redirect_uri: redirectUri,
+    response_mode: 'query', scope: 'openid profile offline_access Mail.Read Mail.Send',
+    code_challenge: challenge, code_challenge_method: 'S256', state: 'screenx',
+  });
+  window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`;
+};
+$('#btnMsDisconnect').onclick = () => {
+  state.mon.outlook = false; state.mon.outlookToken = null; save();
+  stopMonitorLoop(); renderMail(); addLog('تم فصل Outlook');
+};
+
+async function handleAuthRedirect(){
+  const url = new URL(window.location.href);
+  const code = url.searchParams.get('code');
+  if (!code) return;
+  const verifier = sessionStorage.getItem('pkce_verifier');
+  const clientId = localStorage.getItem('ms_client_id');
+  try{
+    const resp = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+      method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({ client_id:clientId, grant_type:'authorization_code', code, redirect_uri:redirectUri, code_verifier:verifier }),
+    });
+    const data = await resp.json();
+    if (data.access_token) {
+      state.mon.outlook = true; state.mon.outlookToken = data.access_token; save();
+      addLog('تم الربط الحقيقي بـ Outlook (قراءة فقط)');
+    } else {
+      addLog('فشل تبادل رمز الدخول: ' + (data.error_description || 'unknown error'));
+    }
+  }catch(e){ addLog('خطأ اتصال أثناء تسجيل الدخول: ' + e.message); }
+  window.history.replaceState({}, document.title, redirectUri);
+  renderMail();
+}
+
+async function fetchRealInbox(){
+  const token = state.mon.outlookToken;
+  if (!token) return [];
+  const resp = await fetch('https://graph.microsoft.com/v1.0/me/mailFolders/Inbox/messages?$filter=isRead eq false&$top=15&$select=id,conversationId,subject,from,body,receivedDateTime', { headers:{ Authorization:'Bearer '+token } });
+  if (!resp.ok){ addLog('فشل الفحص الحقيقي: HTTP '+resp.status); return []; }
+  const data = await resp.json();
+  const store = state; store.mon.seen = store.mon.seen || [];
+  const fresh = (data.value||[]).filter(m=>!store.mon.seen.includes(m.id));
+  return fresh.map(m=>({
+    id:m.id, subject:m.subject||'',
+    from:(m.from&&m.from.emailAddress&&m.from.emailAddress.address)||'',
+    body:(m.body&&m.body.content)||'', date:m.receivedDateTime,
+  }));
+}
+
+async function sendGraphReply(messageId, body){
+  const token = state.mon.outlookToken;
+  const resp = await fetch(`https://graph.microsoft.com/v1.0/me/messages/${messageId}/reply`, {
+    method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
+    body: JSON.stringify({ comment: body }),
+  });
+  return resp.ok;
+}
+
+// Sends a real Reply on the same thread when we have the original message's ID
+// and an active token; otherwise falls back to opening Outlook to compose.
+async function sendReviewedReply(t, text){
+  if(t.lastMessageId && state.mon.outlookToken){
+    const ok = await sendGraphReply(t.lastMessageId, text);
+    if(ok){
+      t.status='sent'; t.draft=null; save(); renderTickets();
+      addLog('تم إرسال الرد كـ Reply حقيقي على نفس الرسالة');
+      toast('تم الإرسال داخل نفس المحادثة');
+      return true;
+    }
+    addLog('فشل الإرسال الحقيقي — سيتم فتح Outlook يدويًا بدلاً منه');
+  }
+  openMail(t.email, 'Re: '+(t.lastSubject||'Report'), text);
+  t.status='sent'; save(); renderTickets();
+  addLog('أرسل المستخدم الرد عبر تطبيق Outlook');
+  return false;
+}
+
+async function processRealMessages(){
+  const msgs = await fetchRealInbox();
+  for(const msg of msgs){
+    const {cls} = classify(msg.body);
+    const id = findOrCreateByEmail(msg.from);
+    const t = state.tickets[id];
+    const prev = t.appeals.length ? t.appeals[t.appeals.length-1].text : null;
+    const reply = englishize(msg.body, cls, prev);
+    t.lastResp=cls;
+    t.status = cls==='Ticket Closed'?'closed': cls==='Ticket Rejected'?'rejected': cls==='Unmonitored Mailbox'?'unmon': cls==='Automated / Template Reply'?'auto':'waiting';
+    t.draft=reply;
+    t.lastSubject=msg.subject||'Report';
+    t.lastMessageId=msg.id;
+    state.mon.seen.push(msg.id);
+    state.mon.newMsgs = (state.mon.newMsgs||0) + 1;
+
+    const needsUser = (cls==='More Information Required');
+    if(state.autoSend && state.mon.outlookToken && !needsUser){
+      const ok = await sendGraphReply(msg.id, reply);
+      if(ok){
+        t.status='sent'; t.draft=null;
+        addLog(`إرسال تلقائي بدون تدخل المستخدم — ${msg.from} (${cls})`);
+      } else {
+        addLog(`فشل الإرسال التلقائي — بقي الرد كمسودة بانتظار المراجعة — ${msg.from}`);
+      }
+    } else if(needsUser){
+      addLog(`⏸️ يحتاج معلومة منك أنت — توقف الإرسال التلقائي وبقي مسودة — ${msg.from}`);
+    }
+    save();
+    addLog(`رسالة حقيقية جديدة من ${msg.from} → ${cls}`);
+    if(prev) addLog('تم استرجاع آخر رد لنفس البريد');
+  }
+  state.mon.lastCheck = now(); save(); renderMail(); renderTickets();
+  if(!msgs.length) addLog('فحص حقيقي — لا رسائل جديدة');
+}
+
+$('#autoSendSwitch').onclick=()=>{
+  state.autoSend=!state.autoSend; save();
+  $('#autoSendSwitch').className='switch'+(state.autoSend?' on':'');
+  addLog(state.autoSend?'تفعيل الإرسال التلقائي بدون تأكيد':'إيقاف الإرسال التلقائي — كل رد يبقى مسودة بانتظار مراجعتك');
+};
+$('#autoSendSwitch').className='switch'+(state.autoSend?' on':'');
+
+$('#monSwitch').onclick=()=>{
+  state.mon.active=!state.mon.active;
+  if(state.mon.active){ startMonitorLoop(); }
+  else stopMonitorLoop();
+  save(); renderMail();
+  addLog(state.mon.active?'تم تفعيل Monitoring — الفحص التلقائي الحقيقي يعمل الآن':'تم إيقاف Monitoring');
+};
+$('#btnCheckNow').onclick = () => processRealMessages();
+let monInterval=null;
+function startMonitorLoop(){
+  if(monInterval) return;
+  processRealMessages();
+  const minutes = 3;
+  monInterval=setInterval(processRealMessages, minutes*60000);
+}
+function stopMonitorLoop(){ clearInterval(monInterval); monInterval=null; }
+function renderMail(){
+  $('#outlookStatus').textContent = state.mon.outlook ? '✅ متصل (قراءة فقط)' : 'غير متصل';
+  $('#btnMsConnect').classList.toggle('hide', !!state.mon.outlook);
+  $('#btnMsDisconnect').classList.toggle('hide', !state.mon.outlook);
+  $('#monitorCard').style.display=state.mon.outlook?'block':'none';
+  $('#monSwitch').className='switch'+(state.mon.active?' on':'');
+  $('#monLabel').textContent=state.mon.active?'المراقبة نشطة':'المراقبة متوقفة';
+  $('#monSub').textContent=state.mon.active?'يفحص Outlook فعليًا كل 3 دقائق':'اضغط للتفعيل';
+  $('#lastCheck').textContent=state.mon.lastCheck||'—';
+  $('#newMsgs').textContent=state.mon.newMsgs||0;
+  $('#statusDot').style.background=state.mon.active?'var(--teal)':'var(--sub)';
+}
+
+// ---- classification engine ----
+const RULES=[
+ {cls:'Unmonitored Mailbox', color:'unmon', re:[/mailbox.{0,15}(not|isn.?t).{0,10}monitor/i,/not\s+monitored/i,/do not reply to this email/i,/this email address is not monitored/i,/لا\s*يتم\s*مراقبة\s*هذا\s*البريد/,/هذا البريد غير مراقب/,/يرجى عدم الرد على هذه الرسالة/]},
+ {cls:'Ticket Rejected', color:'rej', re:[/we (have )?(reviewed|determined).{0,40}(no violation|not violat|reject)/i,/appeal.{0,15}(denied|rejected|unsuccessful)/i,/تم رفض/,/لم نجد مخالفة/,/رفض الاعتراض/]},
+ {cls:'Ticket Closed', color:'closed', re:[/ticket.{0,10}(has been )?closed/i,/this (case|ticket).{0,10}closed/i,/تم إغلاق (التذكرة|البلاغ)/]},
+ {cls:'More Information Required', color:'wait', re:[/provide (additional|more) information/i,/we need more details/i,/provide (the )?username/i,/submit (only )?(one )?username/i,/provide the username of the account/i,/(share|send) (the |us the )?username/i,/يرجى تزويدنا بمزيد من المعلومات/,/يرجى تزويدنا باسم المستخدم/]},
+ {cls:'Automated / Template Reply', color:'auto', re:[/this is an automated (message|response)/i,/do not reply to this automated/i,/رسالة آلية/,/رد تلقائي/]},
+ {cls:'Support Reply', color:'resp', re:[/thank you for (contacting|reaching out)/i,/our team (has reviewed|will review)/i,/شكرًا لتواصلك/]},
+];
+function classify(text){
+  for(const r of RULES){ if(r.re.some(rx=>rx.test(text))) return {cls:r.cls,color:r.color}; }
+  return {cls:'Unknown', color:'unmon'};
+}
+function englishize(text, cls, prevAppeal){
+  const deflection = (cls==='Unmonitored Mailbox' || cls==='Automated / Template Reply');
+  const minorTpl = TEMPLATES.find(t=>t.name==='قاصر');
+  let base;
+  if(prevAppeal){
+    base = prevAppeal.replace(/\n{3,}/g,'\n\n').trim() + `\n\n(Following up after receiving an automated/${cls} response. Kindly escalate for human review.)`;
+  } else if(deflection && state.defaultTemplate!=null && TEMPLATES[state.defaultTemplate]){
+    base = TEMPLATES[state.defaultTemplate].text.trim();
+  } else if(cls==='Unknown' && minorTpl){
+    base = minorTpl.text.trim();
+  } else {
+    base = `Hello,\n\nThank you for your response. We received a "${cls}" reply and would like to request a further review of this case by a member of your support team, as we believe this matter requires additional attention.\n\nWe appreciate your assistance and look forward to your reply.\n\nBest regards.`;
+  }
+  return base + `\n\n---------- Support message ----------\n${text.trim()}`;
+}
+let analyzeTimer=null;
+$('#aBody').addEventListener('input', ()=>{
+  clearTimeout(analyzeTimer);
+  analyzeTimer=setTimeout(()=>{ if($('#aBody').value.trim().length>20) runAnalysis(); }, 700);
+});
+$('#btnAnalyze').onclick=runAnalysis;
+function runAnalysis(){
+  const from=($('#aFrom').value||'safetysupport@tiktok.com').trim();
+  const body=$('#aBody').value||'';
+  if(!body.trim()){toast('الصق نص الرسالة أولاً');return;}
+  const {cls,color}=classify(body);
+  const id=findOrCreateByEmail(from);
+  const t=state.tickets[id];
+  const prev = t.appeals.length ? t.appeals[t.appeals.length-1].text : null;
+  const reply = englishize(body, cls, prev);
+
+  t.lastResp=cls;
+  t.status = cls==='Ticket Closed'?'closed': cls==='Ticket Rejected'?'rejected': cls==='Unmonitored Mailbox'?'unmon': cls==='Automated / Template Reply'?'auto':'waiting';
+  t.draft=reply;
+  save();
+  addLog(`تحليل رسالة من ${from} → ${cls}`);
+  if(prev) addLog(`تم استرجاع آخر رد لنفس البريد`);
+  addLog(`تم تجهيز Draft رد بالإنجليزية — بانتظار مراجعة المستخدم`);
+  renderTickets();
+
+  $('#analyzeResult').innerHTML = `
+    <div class="result">
+      <div class="result-head">
+        <span class="pill ${color}">${cls}</span>
+        <span class="ticket-meta">${prev?'♻️ أُعيد استخدام آخر رد':'✳️ تم إنشاء رد جديد'}</span>
+      </div>
+      <div class="result-body">
+        <div class="field"><b>سبب التصنيف</b><span>تطابق نمط النص مع فئة "${cls}"</span></div>
+        <div class="field"><b>Reply Draft (English — same thread, includes original message)</b>
+          <div class="reply-box">${reply.replace(/</g,'&lt;')}</div>
+        </div>
+        <div class="btnrow">
+          <button class="btn-p" id="btnCopyDraft">📋 نسخ الرد</button>
+          <button class="btn-w" id="btnSendDraft">✅ Review & Send</button>
+        </div>
+        <div class="badge-note">الإرسال الفعلي داخل نفس Thread (In-Reply-To/References) يتطلب اتصال Outlook API بصلاحية إرسال. الزر هنا يفتح مسودة بريد جاهزة للمراجعة والإرسال اليدوي.</div>
+      </div>
+    </div>`;
+  $('#btnCopyDraft').onclick=()=>navigator.clipboard.writeText(reply).then(()=>toast('تم نسخ الرد'));
+  $('#btnSendDraft').onclick=()=>sendReviewedReply(t, reply);
+}
+
+// ---- tickets render ----
+const STATUS_LABEL={open:'مفتوحة',waiting:'بانتظار رد',responded:'تم الرد',closed:'مغلقة',rejected:'مرفوضة',auto:'رد آلي',unmon:'بريد غير مراقب',draft:'مسودة اعتراض',sent:'تم الإرسال'};
+const STATUS_CSS={open:'open',waiting:'wait',responded:'resp',closed:'closed',rejected:'rej',auto:'auto',unmon:'unmon',draft:'draft',sent:'sent'};
+function renderTickets(){
+  const ids=Object.keys(state.tickets);
+  if(!ids.length){$('#ticketsList').innerHTML='<div class="empty">لا توجد تذاكر بعد</div>';return;}
+  $('#ticketsList').innerHTML=ids.reverse().map(id=>{
+    const t=state.tickets[id];
+    return `<div class="ticket">
+      <div class="ticket-top">
+        <span class="ticket-id">${t.email||'—'}</span>
+        <span class="pill ${STATUS_CSS[t.status]||'open'}">${STATUS_LABEL[t.status]||t.status}</span>
+      </div>
+      <div class="ticket-meta">أُنشئت: ${t.created} · آخر رد: ${t.lastResp||'—'}</div>
+      <div class="ticket-meta">عدد الرسائل: ${t.appeals?t.appeals.length:0}</div>
+      ${t.draft && t.status!=='sent' ? `<div class="btnrow"><button class="btn-w" data-review="${id}">📝 مراجعة وإرسال الرد الجاهز</button></div>` : ''}
+    </div>`;
+  }).join('');
+  $('#ticketsList').querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>{
+    const t=state.tickets[b.dataset.review];
+    $('#analyzeResult').innerHTML='';
+    document.querySelector('.tabbar button[data-tab="analyze"]').click();
+    $('#aFrom').value=t.email; $('#aBody').value='';
+    $('#analyzeResult').innerHTML = `
+      <div class="result">
+        <div class="result-head"><span class="ticket-meta">رد جاهز — ${t.email}</span></div>
+        <div class="result-body">
+          <textarea id="draftEdit" style="min-height:220px;direction:ltr;text-align:left">${t.draft.replace(/</g,'&lt;')}</textarea>
+          <div class="btnrow">
+            <button class="btn-p" id="btnCopyDraft2">📋 نسخ الرد</button>
+            <button class="btn-w" id="btnSendDraft2">✅ إرسال كـ Reply</button>
+          </div>
+        </div>
+      </div>`;
+    $('#btnCopyDraft2').onclick=()=>navigator.clipboard.writeText($('#draftEdit').value).then(()=>toast('تم نسخ الرد'));
+    $('#btnSendDraft2').onclick=()=>sendReviewedReply(t, $('#draftEdit').value);
+  });
+}
+
+// ---- log render ----
+function renderLog(){
+  if(!state.log.length){$('#logList').innerHTML='<div class="empty">لا يوجد نشاط بعد</div>';return;}
+  $('#logList').innerHTML=state.log.map(l=>`<div class="log"><time class="mono">${l.t}</time><span>${l.text}</span></div>`).join('');
+}
+
+// ---- toast ----
+function toast(msg){
+  let el=document.createElement('div');
+  el.textContent=msg;
+  el.style.cssText='position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#161A20;border:1px solid #262C34;color:#EDEFF2;padding:10px 16px;border-radius:10px;font-size:13.5px;z-index:99;box-shadow:0 6px 20px rgba(0,0,0,.3)';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1800);
+}
+
+function accessRoleLabel(role, blocked){
+  const base = role==='owner'?'👑 مالك':(role==='محاولة فاشلة'||role==='failed')?'<span style="color:var(--red)">❌ محاولة فاشلة</span>':role==='blocked-attempt'?'<span style="color:var(--red)">🚫 حاول شخص محظور</span>':'مستخدم';
+  return base + (blocked?' · <b style="color:var(--red)">🚫 محظور</b>':'');
+}
+function paintAccessLog(log, counts, blocklist, source){
+  if(!log.length){$('#accessLogList').innerHTML='<div class="empty">لا يوجد سجل دخول بعد</div>';return;}
+  const note = source==='server' ? '<div class="ticket-meta" style="margin-bottom:8px">🌐 سجل مركزي حقيقي من كل الأجهزة</div>' : '<div class="ticket-meta" style="margin-bottom:8px">📱 سجل محلي لهذا الجهاز فقط — فعّل رابط الـ Backend للسجل المركزي</div>';
+  $('#accessLogList').innerHTML = note + log.map(e=>{
+    const fails = counts[e.ip]||0;
+    const blocked = blocklist.includes(e.ip);
+    const showBlockBtn = (e.role==='محاولة فاشلة'||e.role==='failed') && fails>1 && !blocked;
+    const t = source==='server' ? new Date(e.t).toLocaleString('ar-EG') : e.t;
+    return `<div class="log" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div style="display:flex;gap:10px">
+        <time class="mono">${t}</time>
+        <span>${e.device||'—'} · IP: <b class="mono">${e.ip}</b> · ${accessRoleLabel(e.role, blocked)}</span>
+      </div>
+      ${showBlockBtn?`<div><button class="btn-d" style="padding:6px 12px;font-size:12px" data-block="${e.ip}">🚫 حظر هذا الـIP (${fails} محاولات فاشلة)</button></div>`:''}
+    </div>`;
+  }).join('');
+  $('#accessLogList').querySelectorAll('[data-block]').forEach(b=>b.onclick=async ()=>{
+    const ip=b.dataset.block;
+    const url=backendUrl();
+    if(url){ try{ await fetch(url+'/access/block',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ip})}); }catch(e){} }
+    else { const bl=JSON.parse(localStorage.getItem('screenx_blocklist')||'[]'); if(!bl.includes(ip)){ bl.push(ip); localStorage.setItem('screenx_blocklist', JSON.stringify(bl)); } }
+    toast('تم حظر هذا الـIP من الدخول');
+    renderAccessLog();
+  });
+}
+async function renderAccessLog(){
+  const url=backendUrl();
+  if(url){
+    try{
+      const resp=await fetch(url+'/access/log');
+      const data=await resp.json();
+      paintAccessLog(data.log||[], data.failCounts||{}, data.blocklist||[], 'server');
+      return;
+    }catch(e){ /* fall through to local */ }
+  }
+  const log=JSON.parse(localStorage.getItem('screenx_access_log')||'[]');
+  const counts=JSON.parse(localStorage.getItem('screenx_fail_counts')||'{}');
+  const blocklist=JSON.parse(localStorage.getItem('screenx_blocklist')||'[]');
+  paintAccessLog(log, counts, blocklist, 'local');
+}
+$('#btnClearAccessLog').onclick=()=>{
+  localStorage.removeItem('screenx_access_log');
+  renderAccessLog();
+  toast('تم مسح السجل');
+};
+renderMail(); renderTickets(); renderLog(); renderTemplates(); renderAccessLog();
+handleAuthRedirect();
+if(!state.mon.seen) state.mon.seen=[];
+if(state.defaultTemplate==null) state.defaultTemplate=0;
+if(state.mon.active) startMonitorLoop();
+</script>
+</body>
+</html>
